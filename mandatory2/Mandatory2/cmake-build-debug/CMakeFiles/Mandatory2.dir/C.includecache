@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/volkan/CLionProjects/Mandatory2/memorynodemanager.h
+stdio.h
+-
+stdlib.h
+-
+
+/home/volkan/CLionProjects/Mandatory2/mymem.c
+stdlib.h
+-
+string.h
+-
+stdio.h
+-
+assert.h
+-
+mymem.h
+/home/volkan/CLionProjects/Mandatory2/mymem.h
+memorynodemanager.h
+/home/volkan/CLionProjects/Mandatory2/memorynodemanager.h
+time.h
+-
+
+/home/volkan/CLionProjects/Mandatory2/mymem.h
+stddef.h
+-
+

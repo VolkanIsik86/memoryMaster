@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/manda2.dir/mymem.c.o  -o manda2 

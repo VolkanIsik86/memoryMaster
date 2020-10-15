@@ -1,0 +1,3 @@
+/home/volkan/CLionProjects/Mandatory2/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/volkan/CLionProjects/Mandatory2/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/volkan/CLionProjects/Mandatory2/cmake-build-debug/CMakeFiles/Mandatory2.dir
