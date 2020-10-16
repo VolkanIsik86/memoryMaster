@@ -31,7 +31,7 @@ MemoryList* search(MemoryList *Head,size_t size){
     int worstSize = 0;
 
     while (search!=NULL){
-        if(search->size>size && search->alloc==0){
+        if(search->size>=size && search->alloc==0){
             if(search->size > worstSize) {
                 biggestnode = search;
                 worstSize = search->size;
@@ -47,12 +47,12 @@ MemoryList* search(MemoryList *Head,size_t size){
 
 }
 
-MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size){
+MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size,void * ptr){
 
     MemoryList *node = (MemoryList*) malloc(sizeof(MemoryList));
     node->size=size;
     node->alloc=1;
-    node->ptr=node;
+    node->ptr=(ptr+size);
     explode->size-=size;
 
     if(explode->last != NULL){
@@ -66,7 +66,7 @@ MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size){
         explode->last=node;
         *head = node;
     }
-    return node;
+    return node->ptr;
 }
 
 MemoryList* delete(MemoryList **Head, MemoryList* node){
@@ -96,33 +96,47 @@ void freeAll(MemoryList *Head){
 }
 
 void dealloc(MemoryList **Head, MemoryList* node){
-    node->alloc=0;
 
-    if(node->next!=NULL){
-        if(node->next->alloc==0){
-            node->size+=node->next->size;
-            if(node->next->next==NULL){
-                free(node->next);
-                node->next=NULL;
+    MemoryList * search = *Head;
+    MemoryList * found = NULL;
+    while (search!=NULL){
+        if(search->ptr == node){
+            found=search;
+        }
+        search=search->next;
+    }
+
+
+
+
+
+    found->alloc=0;
+
+    if(found->next != NULL){
+        if(found->next->alloc == 0){
+            found->size+=found->next->size;
+            if(found->next->next == NULL){
+                free(found->next);
+                found->next=NULL;
             }else{
-                MemoryList* tobeFreed = node->next;
-                node->next->next->last=node;
-                node->next=node->next->next;
+                MemoryList* tobeFreed = found->next;
+                found->next->next->last=found;
+                found->next=found->next->next;
                 free(tobeFreed);
             }
         }
     }
-    if(node->last!=NULL){
-        if(node->last->alloc==0){
-            node->size+=node->last->size;
-            if(node->last->last==NULL){
-                free(node->last);
-                node->last=NULL;
-                *Head=node;
+    if(found->last != NULL){
+        if(found->last->alloc == 0){
+            found->size+=found->last->size;
+            if(found->last->last == NULL){
+                free(found->last);
+                found->last=NULL;
+                *Head=found;
             } else{
-                MemoryList* tobeFreed = node->last;
-                node->last->last->next = node;
-                node->last=node->last->last;
+                MemoryList* tobeFreed = found->last;
+                found->last->last->next = found;
+                found->last=found->last->last;
                 free(tobeFreed);
             }
         }

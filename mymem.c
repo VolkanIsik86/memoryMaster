@@ -20,6 +20,8 @@ size_t mySize;
 void *myMemory = NULL;
 
 static MemoryList *head;
+static void *lastptr;
+//static MemoryList *last;
 //static struct MemoryList *next;
 
 
@@ -48,6 +50,7 @@ void initmem(strategies strategy, size_t sz)
     freeAll(head);
 
     myMemory = malloc(sz);
+    lastptr = myMemory;
     head = (MemoryList * ) malloc(sizeof(MemoryList));
     head->ptr = myMemory;
     head->alloc = 0;
@@ -78,9 +81,11 @@ void *mymalloc(size_t requested)
             return NULL;
         case Worst:
         {
+
             MemoryList *explode = search(head,requested);
             if(explode)
-                return insert(&head,explode,requested);
+                lastptr = insert(&head,explode,requested,lastptr);
+            return lastptr;
         }
         case Next:
             return NULL;
