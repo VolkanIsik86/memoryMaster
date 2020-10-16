@@ -264,7 +264,7 @@ void print_memory_status()
  */
 void try_mymem(int argc, char **argv) {
     strategies strat;
-    void *a, *b, *c, *d, *e, *f;
+    void *a, *b, *c, *d, *e;
     if(argc > 1)
         strat = strategyFromString(argv[1]);
     else
@@ -279,15 +279,38 @@ void try_mymem(int argc, char **argv) {
     a = mymalloc(100);
     b = mymalloc(100);
     c = mymalloc(100);
-    d = mymalloc(75);
-    myfree(c);
-    e = mymalloc(50);
     myfree(b);
-    f = mymalloc(25);
+    d = mymalloc(50);
+    myfree(a);
+    e = mymalloc(25);
 
     print_memory();
     print_memory_status();
 
+//-------------------------------------------------------------------------
+
+
+//    int correct_holes = 0;
+//    int correct_alloc = 100;
+//    int correct_largest_free = 0;
+//    int i;
+//
+//    void* lastPointer = NULL;
+//    initmem(strat,100);
+//    for (i = 0; i < 100; i++)
+//    {
+//        void* pointer = mymalloc(1);
+//        if ( i > 0 && pointer != (lastPointer+1) )
+//        {
+//            printf("Allocation with %s was not sequential at %i; expected %p, actual %p\n", strategy_name(strat), i,lastPointer+1,pointer);
+//
+//        }
+//        lastPointer = pointer;
+//    }
+
+
+
+//---------------------------------------------------------------------------
 }
 
 int main(){
