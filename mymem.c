@@ -104,31 +104,68 @@ void myfree(void* block)
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes()
 {
-    return 0;
+    int holes = 0;
+    MemoryList * searchHole = NULL;
+    searchHole = head;
+    while (searchHole!=NULL){
+        if (searchHole->alloc == 0){
+            holes++;
+        }
+        searchHole = searchHole->next;
+    }
+    return holes;
 }
 
 /* Get the number of bytes allocated */
 int mem_allocated()
 {
-    return 0;
+    int allocated = 0;
+    MemoryList * searchAlloc = NULL;
+    searchAlloc = head;
+    while (searchAlloc != NULL){
+        if (searchAlloc->alloc == 1){
+            allocated+=searchAlloc->size;
+        }
+        searchAlloc = searchAlloc->next;
+    }
+    return allocated;
+
 }
 
 /* Number of non-allocated bytes */
 int mem_free()
 {
-    return 0;
+    int allocated = 0;
+    MemoryList * searchAlloc = NULL;
+    searchAlloc = head;
+    while (searchAlloc != NULL){
+        if (searchAlloc->alloc == 0){
+            allocated+=searchAlloc->size;
+        }
+        searchAlloc = searchAlloc->next;
+    }
+    return allocated;
 }
 
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
-    return 0;
+    return search(head,0)->size;
 }
 
 /* Number of free blocks smaller than "size" bytes. */
 int mem_small_free(int size)
 {
-    return 0;
+    int block = 0;
+    MemoryList * searchNonAlloc = NULL;
+    searchNonAlloc = head;
+    while (searchNonAlloc != NULL){
+        if (searchNonAlloc->alloc == 0){
+            block++;
+        }
+        searchNonAlloc = searchNonAlloc->next;
+    }
+    return block;
 }
 
 char mem_is_alloc(void *ptr)
@@ -227,7 +264,7 @@ void print_memory_status()
  */
 void try_mymem(int argc, char **argv) {
     strategies strat;
-    void *a, *b, *c, *d, *e;
+    void *a, *b, *c, *d, *e, *f;
     if(argc > 1)
         strat = strategyFromString(argv[1]);
     else
@@ -242,10 +279,11 @@ void try_mymem(int argc, char **argv) {
     a = mymalloc(100);
     b = mymalloc(100);
     c = mymalloc(100);
+    d = mymalloc(75);
+    myfree(c);
+    e = mymalloc(50);
     myfree(b);
-    d = mymalloc(50);
-    myfree(a);
-    e = mymalloc(25);
+    f = mymalloc(25);
 
     print_memory();
     print_memory_status();

@@ -105,8 +105,10 @@ void dealloc(MemoryList **Head, MemoryList* node){
                 free(node->next);
                 node->next=NULL;
             }else{
+                MemoryList* tobeFreed = node->next;
                 node->next->next->last=node;
                 node->next=node->next->next;
+                free(tobeFreed);
             }
         }
     }
@@ -118,8 +120,10 @@ void dealloc(MemoryList **Head, MemoryList* node){
                 node->last=NULL;
                 *Head=node;
             } else{
+                MemoryList* tobeFreed = node->last;
                 node->last->last->next = node;
                 node->last=node->last->last;
+                free(tobeFreed);
             }
         }
     }
