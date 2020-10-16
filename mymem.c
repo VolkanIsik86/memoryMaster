@@ -46,21 +46,14 @@ void initmem(strategies strategy, size_t sz)
 
     if (myMemory != NULL) free(myMemory); /* in case this is not the first time initmem2 is called */
     freeAll(head);
-    /* TODO: release any other memory you were using for bookkeeping when doing a re-initialization! */
-
-
 
     myMemory = malloc(sz);
-
-    head = myMemory;
-    head->ptr = NULL;
+    head = (MemoryList * ) malloc(sizeof(MemoryList));
+    head->ptr = myMemory;
     head->alloc = 0;
     head->size = sz;
     head->next = NULL;
     head->last = NULL;
-
-    /* TODO: Initialize memory management structure. */
-
 
 }
 
