@@ -52,6 +52,7 @@ MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size){
     MemoryList *node = (MemoryList*) malloc(sizeof(MemoryList));
     node->size=size;
     node->alloc=1;
+    node->ptr=node;
     explode->size-=size;
 
     if(explode->last != NULL){
