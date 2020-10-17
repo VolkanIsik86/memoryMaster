@@ -21,6 +21,7 @@ void *myMemory = NULL;
 
 static MemoryList *head;
 static void *lastptr;
+static MemoryList *lastnode;
 //static MemoryList *last;
 //static struct MemoryList *next;
 
@@ -50,14 +51,15 @@ void initmem(strategies strategy, size_t sz)
     freeAll(head);
 
     myMemory = malloc(sz);
-    lastptr = myMemory;
+    lastnode = (MemoryList * ) malloc(sizeof(MemoryList));
+    lastnode->ptr = myMemory;
+    lastnode->size = 0;
     head = (MemoryList * ) malloc(sizeof(MemoryList));
     head->ptr = myMemory;
     head->alloc = 0;
     head->size = sz;
     head->next = NULL;
     head->last = NULL;
-
 }
 
 /* Allocate a block of memory with the requested size.
@@ -84,8 +86,8 @@ void *mymalloc(size_t requested)
 
             MemoryList *explode = search(head,requested);
             if(explode)
-                lastptr = insert(&head,explode,requested,lastptr);
-            return lastptr;
+                lastnode = insert(&head,explode,requested,lastnode);
+            return lastnode->ptr;
         }
         case Next:
             return NULL;
@@ -113,7 +115,7 @@ int mem_holes()
     MemoryList * searchHole = NULL;
     searchHole = head;
     while (searchHole!=NULL){
-        if (searchHole->alloc == 0){
+        if (searchHole->alloc == 0 && searchHole->size>0){
             holes++;
         }
         searchHole = searchHole->next;
@@ -155,7 +157,13 @@ int mem_free()
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
-    return search(head,0)->size;
+    MemoryList * largest = search(head,0);
+
+    if(largest!=NULL) {
+        return largest->size;
+    }
+    else
+        return 0;
 }
 
 /* Number of free blocks smaller than "size" bytes. */
@@ -165,7 +173,7 @@ int mem_small_free(int size)
     MemoryList * searchNonAlloc = NULL;
     searchNonAlloc = head;
     while (searchNonAlloc != NULL){
-        if (searchNonAlloc->alloc == 0){
+        if (searchNonAlloc->alloc == 0 && searchNonAlloc->size<size){
             block++;
         }
         searchNonAlloc = searchNonAlloc->next;
@@ -175,6 +183,15 @@ int mem_small_free(int size)
 
 char mem_is_alloc(void *ptr)
 {
+    MemoryList *search = NULL;
+    search = head;
+
+    while (search!=NULL){
+        if(search->alloc==1 && search->ptr==ptr){
+            return 1;
+        }
+        search=search->next;
+    }
     return 0;
 }
 
@@ -187,7 +204,7 @@ char mem_is_alloc(void *ptr)
 //Returns a pointer to the memory pool.
 void *mem_pool()
 {
-    return myMemory;
+    return (myMemory);
 }
 
 // Returns the total number of bytes in the memory pool. */
@@ -270,7 +287,7 @@ void print_memory_status()
 void try_mymem(int argc, char **argv) {
     strategies strat;
     void *a, *b, *c, *d, *e;
-    if(argc > 1)
+    if (argc > 1)
         strat = strategyFromString(argv[1]);
     else
         strat = Worst;
@@ -279,18 +296,18 @@ void try_mymem(int argc, char **argv) {
     /* A simple example.
        Each algorithm should produce a different layout. */
 
-    initmem(strat,500);
-
-    a = mymalloc(100);
-    b = mymalloc(100);
-    c = mymalloc(100);
-    myfree(b);
-    d = mymalloc(50);
-    myfree(a);
-    e = mymalloc(25);
-
-    print_memory();
-    print_memory_status();
+//    initmem(strat,500);
+//
+//    a = mymalloc(100);
+//    b = mymalloc(100);
+//    c = mymalloc(100);
+//    myfree(b);
+//    d = mymalloc(50);
+//    myfree(a);
+//    e = mymalloc(25);
+//
+//    print_memory();
+//    print_memory_status();
 
 //-------------------------------------------------------------------------
 
@@ -312,14 +329,156 @@ void try_mymem(int argc, char **argv) {
 //        }
 //        lastPointer = pointer;
 //    }
-
+//
+//    for (i = 1; i < 100; i+= 2)
+//    {
+//        myfree(mem_pool() + i);
+//    }
+//
+//    for(i=0;i<100;i++) {
+//        if(mem_is_alloc(mem_pool()+i) == i%2) {
+//            printf("Byte %d in memory claims to ",i);
+//            if(i%2)
+//                printf("not ");
+//            printf("be allocated.  It should ");
+//            if(!i%2)
+//                printf("not ");
+//            printf("be allocated.\n");
+//
+//        }
+//    }
 
 
 //---------------------------------------------------------------------------
-}
 
-int main(){
-    char *strat[10];
-    try_mymem(0,strat);
-    return 0;
+//    int correct_holes;
+//    int correct_alloc;
+//    int correct_largest_free;
+//    int correct_small;
+//    void* first;
+//    void* second;
+//    void* third;
+//    int correctThird;
+//
+//    initmem(strat,100);
+//
+//    first = mymalloc(10);
+//    second = mymalloc(1);
+//    myfree(first);
+//    third = mymalloc(1);
+//
+//    if (second != (first+10))
+//    {
+//        printf("Second allocation failed; allocated at incorrect offset with strategy %s", strategy_name(strat));
+//
+//    }
+//    correct_alloc = 2;
+//    correct_small = (strat == First || strat == Best);
+//
+//    switch (strat)
+//    {
+//        case Best:
+//            correctThird = (third == first);
+//            correct_holes = 2;
+//            correct_largest_free = 89;
+//            break;
+//        case Worst:
+//            correctThird = (third == second+1);
+//            correct_holes = 2;
+//            correct_largest_free = 88;
+//            break;
+//        case First:
+//            correctThird = (third == first);
+//            correct_holes = 2;
+//            correct_largest_free = 89;
+//            break;
+//        case Next:
+//            correctThird = (third == second+1);
+//            correct_holes = 2;
+//            correct_largest_free = 88;
+//            break;
+//        case NotSet:
+//            break;
+//    }
+//    if (!correctThird)
+//    {
+//        printf("Third allocation failed; allocated at incorrect offset with %s", strategy_name(strat));
+//
+//    }
+//
+//    if (mem_holes() != correct_holes)
+//    {
+//        printf("Holes counted as %d, should be %d with %s\n", mem_holes(), correct_holes, strategy_name(strat));
+//
+//    }
+//
+//    if (mem_small_free(9) != correct_small)
+//    {
+//        printf("Small holes counted as %d, should be %d with %s\n", mem_small_free(9), correct_small, strategy_name(strat));
+//
+//    }
+//
+//    if (mem_allocated() != correct_alloc)
+//    {
+//        printf("Memory reported as %d, should be %d with %s\n", mem_allocated(0), correct_alloc, strategy_name(strat));
+//
+//    }
+//
+//    if (mem_largest_free() != correct_largest_free)
+//    {
+//        printf("Largest memory block free reported as %d, should be %d with %s\n", mem_largest_free(), correct_largest_free, strategy_name(strat));
+//
+//    }
+//
+//}
+//
+//
+//
+//    int correct_holes = 0;
+//    int correct_alloc = 100;
+//    int correct_largest_free = 0;
+//    int i;
+//
+//    void* lastPointer = NULL;
+//    initmem(strat,100);
+//    for (i = 0; i < 100; i++)
+//    {
+//        void* pointer = mymalloc(1);
+//        if ( i > 0 && pointer != (lastPointer+1) )
+//        {
+//            printf("Allocation with %s was not sequential at %i; expected %p, actual %p\n", strategy_name(strat), i,lastPointer+1,pointer);
+//
+//        }
+//        lastPointer = pointer;
+//    }
+//
+//    if (mem_holes() != correct_holes)
+//    {
+//        printf("Holes not counted as %d with %s\n", correct_holes, strategy_name(strat));
+//
+//    }
+//
+//    if (mem_allocated() != correct_alloc)
+//    {
+//        printf("Allocated memory not reported as %d with %s\n", correct_alloc, strategy_name(strat));
+//
+//    }
+//
+//    if (mem_largest_free() != correct_largest_free)
+//    {
+//        printf("Largest memory block free not reported as %d with %s\n", correct_largest_free, strategy_name(strat));
+//
+//    }
+//
+//}
+//
+//
+//
 }
+////
+////
+//int main(){
+//    char *strat[10];
+//    try_mymem(0,strat);
+//    return 0;
+//}

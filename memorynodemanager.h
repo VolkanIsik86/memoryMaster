@@ -47,12 +47,12 @@ MemoryList* search(MemoryList *Head,size_t size){
 
 }
 
-MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size,void * ptr){
+MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size,MemoryList* lastnode){
 
     MemoryList *node = (MemoryList*) malloc(sizeof(MemoryList));
     node->size=size;
     node->alloc=1;
-    node->ptr=(ptr+size);
+    node->ptr=(lastnode->ptr+lastnode->size);
     explode->size-=size;
 
     if(explode->last != NULL){
@@ -66,7 +66,7 @@ MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size,void * pt
         explode->last=node;
         *head = node;
     }
-    return node->ptr;
+    return node;
 }
 
 MemoryList* delete(MemoryList **Head, MemoryList* node){
@@ -100,7 +100,7 @@ void dealloc(MemoryList **Head, MemoryList* node){
     MemoryList * search = *Head;
     MemoryList * found = NULL;
     while (search!=NULL){
-        if(search->ptr == node){
+        if(search->ptr == node && search->alloc==1){
             found=search;
         }
         search=search->next;
