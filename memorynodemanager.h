@@ -49,6 +49,16 @@ MemoryList* search(MemoryList *Head,size_t size){
 
 MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size,MemoryList* lastnode){
 
+    if(explode->size==size){
+        explode->alloc=1;
+
+        if(explode->next==NULL){
+            explode->ptr=explode->last->ptr+lastnode->size;
+        }
+        return explode;
+    }
+
+
     MemoryList *node = (MemoryList*) malloc(sizeof(MemoryList));
     node->size=size;
     node->alloc=1;
