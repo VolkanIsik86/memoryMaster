@@ -96,14 +96,6 @@ MemoryList* delete(MemoryList **Head, MemoryList* node){
 
 }
 
-void freeAll(MemoryList *Head){
-    MemoryList * search = Head;
-    while (search!=NULL){
-        search=search->next;
-        free(search->last);
-    }
-    free(search);
-}
 
 void dealloc(MemoryList **Head, MemoryList* node){
 

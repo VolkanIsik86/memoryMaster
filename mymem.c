@@ -20,11 +20,7 @@ size_t mySize;
 void *myMemory = NULL;
 
 static MemoryList *head;
-static void *lastptr;
 static MemoryList *lastnode;
-//static MemoryList *last;
-//static struct MemoryList *next;
-
 
 /* initmem must be called prior to mymalloc and myfree.
 
@@ -40,6 +36,23 @@ static MemoryList *lastnode;
    sz specifies the number of bytes that will be available, in total, for all mymalloc requests.
 */
 
+void freeAll(){
+    if (myMemory != NULL) free(myMemory); /* in case this is not the first time initmem2 is called */
+
+    if (head != NULL) {
+
+        MemoryList *search = head;
+        MemoryList *next;
+        while (search != NULL) {
+            next = search->next;
+            free(search);
+            search = next;
+        }
+    }
+//    if (lastnode != NULL)
+//        free(lastnode);
+}
+
 void initmem(strategies strategy, size_t sz)
 {
     myStrategy = strategy;
@@ -47,8 +60,8 @@ void initmem(strategies strategy, size_t sz)
     /* all implementations will need an actual block of memory to use */
     mySize = sz;
 
-    if (myMemory != NULL) free(myMemory); /* in case this is not the first time initmem2 is called */
-    freeAll(head);
+    freeAll();
+
 
     myMemory = malloc(sz);
     lastnode = (MemoryList * ) malloc(sizeof(MemoryList));
