@@ -10,6 +10,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* The main structure for implementing memory allocation.
+ * You may change this to fit your implementation.
+ */
 struct memoryList
 {
     // doubly-linked list
@@ -22,8 +25,7 @@ struct memoryList
     void *ptr;           // location of block in memory pool.
 };
 typedef struct memoryList MemoryList;
-
-
+// Søg funktionen. Søger igennem hele for en ikke allokeret og den største block som er større end size. Listen starter fra head
 MemoryList* search(MemoryList *Head,size_t size){
     MemoryList *search = NULL;
     MemoryList *biggestnode = NULL;
@@ -43,26 +45,26 @@ MemoryList* search(MemoryList *Head,size_t size){
     return biggestnode;
     else
         return NULL;
-
-
 }
-
-MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size,MemoryList* lastnode){
-
+//Opretter en memoryblock og placerer den før eller overtager den block der blev givet.
+MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size){
+    //overtager blokken
     if(explode->size==size){
         explode->alloc=1;
-
         if(explode->next==NULL){
-            explode->ptr=explode->last->ptr+lastnode->size;
+            explode->ptr=explode->last->ptr+explode->last->size;
         }
         return explode;
     }
 
-
+    //Opretter en ny node og placerer den i iforhold til given block
     MemoryList *node = (MemoryList*) malloc(sizeof(MemoryList));
     node->size=size;
     node->alloc=1;
-    node->ptr=(lastnode->ptr+lastnode->size);
+    if(explode->last!=NULL)
+        node->ptr=(explode->last->ptr+explode->last->size);
+    else
+        node->ptr=explode->ptr;
     explode->size-=size;
 
     if(explode->last != NULL){
@@ -79,26 +81,9 @@ MemoryList* insert(MemoryList** head, MemoryList* explode, size_t size,MemoryLis
     return node;
 }
 
-MemoryList* delete(MemoryList **Head, MemoryList* node){
-    if(node->last != NULL){
-        node->last->next=node->next;
-    }else
-        *Head = node->next;
-
-    if(node->next != NULL){
-        node->next->last=node->last;
-    } else
-        node->last=NULL;
-
-    free(node);
-
-    return *Head;
-
-}
-
-
+// Deallokerer en given block.
 void dealloc(MemoryList **Head, MemoryList* node){
-
+    //Finder den node der skal deallokeres.
     MemoryList * search = *Head;
     MemoryList * found = NULL;
     while (search!=NULL){
@@ -107,13 +92,11 @@ void dealloc(MemoryList **Head, MemoryList* node){
         }
         search=search->next;
     }
-
-
-
-
+    /** Deallokerer og frigør given node hvis der er en allerede deallokeret
+     *  node ved siden af given node så vil den sættessammen.
+     */
 
     found->alloc=0;
-
     if(found->next != NULL){
         if(found->next->alloc == 0){
             found->size+=found->next->size;
@@ -144,26 +127,3 @@ void dealloc(MemoryList **Head, MemoryList* node){
         }
     }
 }
-
-
-
-//int main() {
-//    MemoryList *head = (MemoryList*) malloc(sizeof(MemoryList) * 1);
-//    head->key=3;
-//    head->last=NULL;
-//    head->next=NULL;
-//    MemoryList *a =(MemoryList*) malloc(sizeof(MemoryList) * 1);
-//    a->key=5;
-//    a->last=NULL;
-//    a->next=NULL;
-//    head = insert(head,a);
-//    MemoryList *b =(MemoryList*) malloc(sizeof(MemoryList) * 1);
-//    b->key=7;
-//    b->last=NULL;
-//    b->next=NULL;
-//    head = insert(head,b);
-//    printf("%d\n",search(head,7)->key);
-//    head = delete(head,a);
-//    printf("%d\n",search(head,5)->key);
-//    return 0;
-//}

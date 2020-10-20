@@ -6,21 +6,10 @@
 #include "memorynodemanager.h"
 #include <time.h>
 
-
-/* The main structure for implementing memory allocation.
- * You may change this to fit your implementation.
- */
-
-
-
 strategies myStrategy = NotSet;    // Current strategy
-
-
 size_t mySize;
 void *myMemory = NULL;
-
 static MemoryList *head;
-static MemoryList *lastnode;
 
 /* initmem must be called prior to mymalloc and myfree.
 
@@ -36,6 +25,7 @@ static MemoryList *lastnode;
    sz specifies the number of bytes that will be available, in total, for all mymalloc requests.
 */
 
+// Frigør myMemory og og hele linkedlisten hvis de er allokeret.
 void freeAll(){
     if (myMemory != NULL) free(myMemory); /* in case this is not the first time initmem2 is called */
 
@@ -49,10 +39,8 @@ void freeAll(){
             search = next;
         }
     }
-//    if (lastnode != NULL)
-//        free(lastnode);
 }
-
+//initalisering af memory
 void initmem(strategies strategy, size_t sz)
 {
     myStrategy = strategy;
@@ -61,12 +49,8 @@ void initmem(strategies strategy, size_t sz)
     mySize = sz;
 
     freeAll();
-
-
+//memoryet allokeres og head placeres på begyndelsen af memory
     myMemory = malloc(sz);
-    lastnode = (MemoryList * ) malloc(sizeof(MemoryList));
-    lastnode->ptr = myMemory;
-    lastnode->size = 0;
     head = (MemoryList * ) malloc(sizeof(MemoryList));
     head->ptr = myMemory;
     head->alloc = 0;
@@ -74,18 +58,14 @@ void initmem(strategies strategy, size_t sz)
     head->next = NULL;
     head->last = NULL;
 }
-
 /* Allocate a block of memory with the requested size.
  *  If the requested block is not available, mymalloc returns NULL.
  *  Otherwise, it returns a pointer to the newly allocated block.
  *  Restriction: requested >= 1
  */
-
 void *mymalloc(size_t requested)
-
 {
     assert((int)myStrategy > 0);
-
     switch (myStrategy)
     {
         case NotSet:
@@ -96,31 +76,27 @@ void *mymalloc(size_t requested)
             return NULL;
         case Worst:
         {
-
+            //søger efter en fri memoryblok som er den største i hele memory'et
             MemoryList *explode = search(head,requested);
             if(explode)
-                lastnode = insert(&head,explode,requested,lastnode);
-            return lastnode->ptr;
+                //memoryblok placeres og pointeren returneres
+               return insert(&head,explode,requested)->ptr;
         }
         case Next:
             return NULL;
     }
     return NULL;
 }
-
-
 /* Frees a block of memory previously allocated by mymalloc. */
 void myfree(void* block)
 {
     dealloc(&head,block);
 }
-
 /****** Memory status/property functions ******
  * Implement these functions.
  * Note that when refered to "memory" here, it is meant that the
  * memory pool this module manages via initmem/mymalloc/myfree.
  */
-
 /* Get the number of contiguous areas of free space in memory. */
 int mem_holes()
 {
@@ -135,7 +111,6 @@ int mem_holes()
     }
     return holes;
 }
-
 /* Get the number of bytes allocated */
 int mem_allocated()
 {
@@ -151,7 +126,6 @@ int mem_allocated()
     return allocated;
 
 }
-
 /* Number of non-allocated bytes */
 int mem_free()
 {
@@ -166,7 +140,6 @@ int mem_free()
     }
     return allocated;
 }
-
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
@@ -178,7 +151,6 @@ int mem_largest_free()
     else
         return 0;
 }
-
 /* Number of free blocks smaller than "size" bytes. */
 int mem_small_free(int size)
 {
@@ -193,7 +165,7 @@ int mem_small_free(int size)
     }
     return block;
 }
-
+//er memory allokeret
 char mem_is_alloc(void *ptr)
 {
     MemoryList *search = NULL;
@@ -207,13 +179,10 @@ char mem_is_alloc(void *ptr)
     }
     return 0;
 }
-
 /*
  * Feel free to use these functions, but do not modify them.
  * The test code uses them, but you may find them useful.
  */
-
-
 //Returns a pointer to the memory pool.
 void *mem_pool()
 {
@@ -225,8 +194,6 @@ int mem_total()
 {
     return mySize;
 }
-
-
 // Get string name for a strategy.
 char *strategy_name(strategies strategy)
 {
@@ -244,7 +211,6 @@ char *strategy_name(strategies strategy)
             return "unknown";
     }
 }
-
 // Get strategy from name.
 strategies strategyFromString(char * strategy)
 {
@@ -269,19 +235,15 @@ strategies strategyFromString(char * strategy)
         return 0;
     }
 }
-
-
 /*
  * These functions are for you to modify however you see fit.  These will not
  * be used in tests, but you may find them useful for debugging.
  */
-
 /* Use this function to print out the current contents of memory. */
 void print_memory()
 {
     return;
 }
-
 /* Use this function to track memory allocation performance.
  * This function does not depend on your implementation,
  * but on the functions you wrote above.
@@ -304,13 +266,9 @@ void try_mymem(int argc, char **argv) {
         strat = strategyFromString(argv[1]);
     else
         strat = Worst;
-
-
     /* A simple example.
        Each algorithm should produce a different layout. */
-
     initmem(strat,500);
-
     a = mymalloc(100);
     b = mymalloc(100);
     c = mymalloc(100);
@@ -318,8 +276,6 @@ void try_mymem(int argc, char **argv) {
     d = mymalloc(50);
     myfree(a);
     e = mymalloc(25);
-
     print_memory();
     print_memory_status();
-
 }
