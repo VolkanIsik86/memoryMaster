@@ -109,7 +109,7 @@ MemoryList* search(size_t size){
 //Opretter en memoryblock og placerer den før eller overtager den block der blev givet.
 MemoryList* insert(MemoryList* explode, size_t size){
 
-    if(explode->size==size){
+    if(explode->size==size && explode->alloc==0){
         explode->alloc=1;
         if(explode->next==NULL){
             explode->ptr=explode->last->ptr+explode->last->size;
