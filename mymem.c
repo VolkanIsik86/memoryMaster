@@ -3,27 +3,31 @@
 #include <stdio.h>
 #include <assert.h>
 #include "mymem.h"
-#include "memorynodemanager.h"
 #include <time.h>
+#include <zconf.h>
 
 
 /* The main structure for implementing memory allocation.
  * You may change this to fit your implementation.
  */
+struct memoryList
+{
+    // doubly-linked list
+    struct memoryList *last;
+    struct memoryList *next;
 
-
+    int size;            // How many bytes in this block?
+    char alloc;          // 1 if this block is allocated,
+    // 0 if this block is free.
+    void *ptr;           // location of block in memory pool.
+};
+typedef struct memoryList MemoryList;
 
 strategies myStrategy = NotSet;    // Current strategy
-
-
 size_t mySize;
 void *myMemory = NULL;
-
 static MemoryList *head;
-static void *lastptr;
-static MemoryList *lastnode;
-//static MemoryList *last;
-//static struct MemoryList *next;
+static MemoryList *next;
 
 
 /* initmem must be called prior to mymalloc and myfree.
@@ -40,21 +44,36 @@ static MemoryList *lastnode;
    sz specifies the number of bytes that will be available, in total, for all mymalloc requests.
 */
 
+// Frigør myMemory og og hele linkedlisten hvis de er allokeret.
+void freeAll(){
+    next = NULL;
+    if (myMemory != NULL) free(myMemory); /* in case this is not the first time initmem2 is called */
+    if (head != NULL) {
+
+        MemoryList *search = head;
+        MemoryList *nextone;
+        while (search != NULL) {
+            nextone = search->next;
+            free(search);
+            search = nextone;
+        }
+    }
+
+}
+//initalisering af memory
 void initmem(strategies strategy, size_t sz)
 {
+
     myStrategy = strategy;
 
     /* all implementations will need an actual block of memory to use */
     mySize = sz;
 
-    if (myMemory != NULL) free(myMemory); /* in case this is not the first time initmem2 is called */
-    freeAll(head);
-
+    freeAll();
+    //memoryet allokeres og head placeres på begyndelsen af memory
     myMemory = malloc(sz);
-    lastnode = (MemoryList * ) malloc(sizeof(MemoryList));
-    lastnode->ptr = myMemory;
-    lastnode->size = 0;
-    head = (MemoryList * ) malloc(sizeof(MemoryList));
+
+    head = (MemoryList * ) malloc(sizeof(MemoryList)*1);
     head->ptr = myMemory;
     head->alloc = 0;
     head->size = sz;
@@ -67,39 +86,234 @@ void initmem(strategies strategy, size_t sz)
  *  Otherwise, it returns a pointer to the newly allocated block.
  *  Restriction: requested >= 1
  */
+///////////////////////////////////.^-!__MemoryBlockManager__!-^.//////////////////////////////////////////
 
-void *mymalloc(size_t requested)
+// Søg funktionen. Søger igennem hele for en ikke allokeret og den største block som er større end size. Listen starter fra head
+MemoryList* search(size_t size){
+    MemoryList *search = NULL;
+    MemoryList *biggestnode = NULL;
+    search = head;
+    int worstSize = 0;
 
-{
+    while (search!=NULL){
+        if(search->size>=size && search->alloc==0){
+            if(search->size > worstSize) {
+                biggestnode = search;
+                worstSize = search->size;
+            }
+        }
+        search=search->next;
+    }
+    if(biggestnode != NULL)
+        return biggestnode;
+    else
+        return NULL;
+
+
+}
+
+MemoryList* bestSearch(size_t size){
+    MemoryList *search = NULL;
+    MemoryList *bestnode = NULL;
+    search = head;
+    int searchSize = 0;
+
+    while (search!=NULL){
+   	if(search->size >= size && search->alloc==0){
+   		if(bestnode == NULL){
+   		bestnode = search;
+   		}
+   		searchSize = search->size;
+   		if(searchSize < bestnode->size){
+   		bestnode=search;
+   		}
+   	}
+        search=search->next;
+    }
+    return bestnode;
+
+
+}
+
+MemoryList* firstSearch(size_t size){
+    MemoryList *search = NULL;
+    search = head;
+
+    while (search!=NULL){
+   	if(search->size >= size && search->alloc==0){
+		return search;
+   	}
+        search=search->next;
+    }
+}
+
+MemoryList* nextSearch(size_t size){
+    MemoryList *search = NULL;
+    search = next;
+
+	if(next==NULL){
+		return head;
+	}
+
+	if(next->next==NULL){
+	    search = head;
+	}
+
+    while (search!=NULL){
+        if(search->size >= size && search->alloc==0){
+            return search;
+        }
+        search=search->next;
+    }
+    
+}
+
+//Opretter en memoryblock og placerer den før eller overtager den block der blev givet.
+MemoryList* insert(MemoryList* explode, size_t size){
+
+    if(explode->size==size && explode->alloc==0){
+        explode->alloc=1;
+        if(explode->next==NULL){
+            explode->ptr=explode->last->ptr+explode->last->size;
+        }
+        return explode;
+    }
+
+    //Opretter en ny node og placerer den i iforhold til given block
+    MemoryList *node = (MemoryList*) malloc(sizeof(MemoryList)*1);
+    node->size=size;
+    node->alloc=1;
+    if(explode->last!=NULL)
+    node->ptr=(explode->last->ptr+explode->last->size);
+    else
+        node->ptr=explode->ptr;
+    explode->size-=size;
+
+    if(explode->last != NULL){
+        explode->last->next=node;
+        node->last=explode->last;
+        node->next=explode;
+        explode->last=node;
+    } else{
+        node->last=NULL;
+        node->next=explode;
+        explode->last=node;
+        head = node;
+    }
+    return node;
+}
+
+// Deallokerer en given block.
+void dealloc(void* node){
+
+    MemoryList * search = head;
+    MemoryList * found = NULL;
+    while (search!=NULL){
+        if(search->ptr == node && search->alloc==1){
+            found=search;
+        }
+        search=search->next;
+    }
+
+    /** Deallokerer og frigør given node hvis der er en allerede deallokeret
+     *  node ved siden af given node så vil den sættessammen.
+     */
+
+    found->alloc=0;
+
+/**
+ * Disse koder skulle meget gerne merge de blocks som står ved hinanden hvis de er ikke allokeret.
+ * Testen nextfit i stress testen passer ikke med disse koder. Ellers alle andre teste og de andre strategier passede fint.
+ */
+
+/*
+    if(found->next != NULL){
+        if(found->next->alloc == 0){
+            found->size+=found->next->size;
+            if(found->next->next == NULL){
+                free(found->next);
+                found->next=NULL;
+            }else{
+                MemoryList* tobeFreed = found->next;
+                found->next->next->last=found;
+                found->next=found->next->next;
+                free(tobeFreed);
+            }
+        }
+    }
+    if(found->last != NULL){
+        if(found->last->alloc == 0){
+            found->size+=found->last->size;
+            if(found->last->last == NULL){
+                free(found->last);
+                found->last=NULL;
+                head=found;
+            } else{
+                MemoryList* tobeFreed = found->last;
+                found->last->last->next = found;
+                found->last=found->last->last;
+                free(tobeFreed);
+            }
+        }
+    }
+
+*/
+
+
+}
+
+
+///////////////////////////////////.^-!__MemoryBlockManager__!-^.//////////////////////////////////////////
+
+void *mymalloc(size_t requested){
     assert((int)myStrategy > 0);
 
     switch (myStrategy)
     {
         case NotSet:
             return NULL;
+            break;
         case First:
-            return NULL;
+        {
+            MemoryList *explode = firstSearch(requested);
+            	if(explode)
+            		return insert(explode,requested)->ptr; 
+            break;
+            }
         case Best:
-            return NULL;
+        {
+            MemoryList *explode = bestSearch(requested);
+            	if(explode)
+            		return insert(explode,requested)->ptr; 
+            break;
+            }
         case Worst:
         {
-
-            MemoryList *explode = search(head,requested);
+            //søger efter en fri memoryblok som er den største i hele memory'et
+            MemoryList *explode = search(requested);
             if(explode)
-                lastnode = insert(&head,explode,requested,lastnode);
-            return lastnode->ptr;
+                //memoryblok placeres og pointeren returneres
+               return insert(explode,requested)->ptr;
+            break;
         }
         case Next:
-            return NULL;
+        {
+
+                MemoryList *explode = nextSearch(requested);
+                if (explode) {
+                    next = insert(explode, requested);
+                    return next->ptr;
+                }
+
+            break;
+            }
     }
     return NULL;
 }
 
-
 /* Frees a block of memory previously allocated by mymalloc. */
-void myfree(void* block)
-{
-    dealloc(&head,block);
+void myfree(void* block){
+    dealloc(block);
 }
 
 /****** Memory status/property functions ******
@@ -157,7 +371,7 @@ int mem_free()
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
-    MemoryList * largest = search(head,0);
+    MemoryList * largest = search(0);
 
     if(largest!=NULL) {
         return largest->size;
@@ -173,7 +387,7 @@ int mem_small_free(int size)
     MemoryList * searchNonAlloc = NULL;
     searchNonAlloc = head;
     while (searchNonAlloc != NULL){
-        if (searchNonAlloc->alloc == 0 && searchNonAlloc->size<size){
+        if (searchNonAlloc->alloc == 0 && searchNonAlloc->size<=size){
             block++;
         }
         searchNonAlloc = searchNonAlloc->next;
@@ -181,6 +395,7 @@ int mem_small_free(int size)
     return block;
 }
 
+//Er memory allokeret
 char mem_is_alloc(void *ptr)
 {
     MemoryList *search = NULL;
@@ -212,7 +427,6 @@ int mem_total()
 {
     return mySize;
 }
-
 
 // Get string name for a strategy.
 char *strategy_name(strategies strategy)
@@ -273,6 +487,7 @@ void print_memory()
  * This function does not depend on your implementation,
  * but on the functions you wrote above.
  */
+
 void print_memory_status()
 {
     printf("%d out of %d bytes allocated.\n",mem_allocated(),mem_total());
@@ -284,14 +499,14 @@ void print_memory_status()
  * implementations are called.  Run "mem -try <args>" to call this function.
  * We have given you a simple example to start.
  */
+
 void try_mymem(int argc, char **argv) {
     strategies strat;
     void *a, *b, *c, *d, *e;
     if (argc > 1)
         strat = strategyFromString(argv[1]);
     else
-        strat = Worst;
-
+        strat = Next;
 
     /* A simple example.
        Each algorithm should produce a different layout. */
@@ -308,5 +523,4 @@ void try_mymem(int argc, char **argv) {
 
     print_memory();
     print_memory_status();
-
 }
