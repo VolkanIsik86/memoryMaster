@@ -223,7 +223,7 @@ void dealloc(void* node){
 
 /**
  * Disse koder skulle meget gerne merge de blocks som står ved hinanden hvis de er ikke allokeret.
- * Testen nextfit i stress testen passer ikke med disse koder. Ellers alle andre teste og de andre strategier passede fint.
+ * Alle testene består for alle strategier udentagen stresstesten for nextfit. Derfor er de udkommenteret.
  */
 
 /*
