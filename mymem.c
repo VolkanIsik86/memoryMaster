@@ -4,7 +4,6 @@
 #include <assert.h>
 #include "mymem.h"
 #include <time.h>
-#include <zconf.h>
 
 
 /* The main structure for implementing memory allocation.
