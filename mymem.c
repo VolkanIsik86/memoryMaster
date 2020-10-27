@@ -145,6 +145,7 @@ MemoryList* firstSearch(size_t size){
    	}
         search=search->next;
     }
+    return NULL;
 }
 // Søg funktion for Next-Fit strategi.
 MemoryList* nextSearch(size_t size){
@@ -165,7 +166,7 @@ MemoryList* nextSearch(size_t size){
         }
         search=search->next;
     }
-    
+    return NULL;
 }
 
 //Opretter en memoryblock og placerer den før eller overtager den block der blev givet.
