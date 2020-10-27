@@ -26,7 +26,7 @@ strategies myStrategy = NotSet;    // Current strategy
 size_t mySize;
 void *myMemory = NULL;
 static MemoryList *head;
-static MemoryList *next;
+static MemoryList *next; // Denne memory block peger på den sidste allokeret memoryblock. Bliver kun brugt i Next-Fit
 
 
 /* initmem must be called prior to mymalloc and myfree.
@@ -59,7 +59,7 @@ void freeAll(){
     }
 
 }
-//initalisering af memory
+// Initalisering af memory
 void initmem(strategies strategy, size_t sz)
 {
 
@@ -72,6 +72,7 @@ void initmem(strategies strategy, size_t sz)
     //memoryet allokeres og head placeres på begyndelsen af memory
     myMemory = malloc(sz);
 
+    // Initalisering af head block
     head = (MemoryList * ) malloc(sizeof(MemoryList)*1);
     head->ptr = myMemory;
     head->alloc = 0;
@@ -87,8 +88,8 @@ void initmem(strategies strategy, size_t sz)
  */
 ///////////////////////////////////.^-!__MemoryBlockManager__!-^.//////////////////////////////////////////
 
-// Søg funktionen. Søger igennem hele for en ikke allokeret og den største block som er større end size. Listen starter fra head
-MemoryList* search(size_t size){
+// Søg funktion for Worst-Fit strategi.
+MemoryList* worstSearch(size_t size){
     MemoryList *search = NULL;
     MemoryList *biggestnode = NULL;
     search = head;
@@ -110,7 +111,7 @@ MemoryList* search(size_t size){
 
 
 }
-
+// Søg funktion for Best-Fit strategi.
 MemoryList* bestSearch(size_t size){
     MemoryList *search = NULL;
     MemoryList *bestnode = NULL;
@@ -133,7 +134,7 @@ MemoryList* bestSearch(size_t size){
 
 
 }
-
+// Søg funktion for First-Fit strategi.
 MemoryList* firstSearch(size_t size){
     MemoryList *search = NULL;
     search = head;
@@ -145,7 +146,7 @@ MemoryList* firstSearch(size_t size){
         search=search->next;
     }
 }
-
+// Søg funktion for Next-Fit strategi.
 MemoryList* nextSearch(size_t size){
     MemoryList *search = NULL;
     search = next;
@@ -202,11 +203,17 @@ MemoryList* insert(MemoryList* explode, size_t size){
     return node;
 }
 
-// Deallokerer en given block.
+/**
+ * Deallokerer en givet block.
+ */
+
 void dealloc(void* node){
 
     MemoryList * search = head;
     MemoryList * found = NULL;
+    MemoryList * nextBlock;
+    MemoryList * lastBlock;
+
     while (search!=NULL){
         if(search->ptr == node && search->alloc==1){
             found=search;
@@ -214,51 +221,42 @@ void dealloc(void* node){
         search=search->next;
     }
 
-    /** Deallokerer og frigør given node hvis der er en allerede deallokeret
-     *  node ved siden af given node så vil den sættessammen.
+    /** Deallokerer og frigør givet block hvis der er en allerede deallokeret
+     *  block ved siden af givet block så vil dem sættessammen.
      */
 
-    found->alloc=0;
+    if(found!=NULL) {
+        found->alloc = 0;
 
-/**
- * Disse koder skulle meget gerne merge de blocks som står ved hinanden hvis de er ikke allokeret.
- * Alle testene består for alle strategier udentagen stresstesten for nextfit. Derfor er de udkommenteret.
- */
+        // Hvis block som står i next position er allerede deallokeret
+        if (found->next != NULL && found->next->next != NULL) {
+            nextBlock = found->next;
+            if (nextBlock->alloc == 0) {
+                found->size += nextBlock->size;
+                nextBlock->next->last = found;
+                found->next = nextBlock->next;
+                if(next!=NULL && nextBlock->ptr==next->ptr){  // Hvis den block der skal frigøres er den block next peger på så next bliver flyttet til den forrige block.
+                    next=found;
+                }
+                free(nextBlock);
+            }
+        }
 
-/*
-    if(found->next != NULL){
-        if(found->next->alloc == 0){
-            found->size+=found->next->size;
-            if(found->next->next == NULL){
-                free(found->next);
-                found->next=NULL;
-            }else{
-                MemoryList* tobeFreed = found->next;
-                found->next->next->last=found;
-                found->next=found->next->next;
-                free(tobeFreed);
+        // Hvis block som står i last position er allerede deallokeret
+        if (found->last != NULL && found->next != NULL) {
+            lastBlock = found->last;
+            nextBlock = found->next;
+            if (lastBlock->alloc == 0) {
+                lastBlock->size += found->size;
+                lastBlock->next = nextBlock;
+                nextBlock->last = lastBlock;
+                if(next!=NULL && next->ptr==found->ptr){
+                    next=lastBlock;
+                }
+                free(found);
             }
         }
     }
-    if(found->last != NULL){
-        if(found->last->alloc == 0){
-            found->size+=found->last->size;
-            if(found->last->last == NULL){
-                free(found->last);
-                found->last=NULL;
-                head=found;
-            } else{
-                MemoryList* tobeFreed = found->last;
-                found->last->last->next = found;
-                found->last=found->last->last;
-                free(tobeFreed);
-            }
-        }
-    }
-
-*/
-
-
 }
 
 
@@ -266,6 +264,10 @@ void dealloc(void* node){
 
 void *mymalloc(size_t requested){
     assert((int)myStrategy > 0);
+
+    if (mem_largest_free()<requested){
+        return NULL;
+    }
 
     switch (myStrategy)
     {
@@ -289,7 +291,7 @@ void *mymalloc(size_t requested){
         case Worst:
         {
             //søger efter en fri memoryblok som er den største i hele memory'et
-            MemoryList *explode = search(requested);
+            MemoryList *explode = worstSearch(requested);
             if(explode)
                 //memoryblok placeres og pointeren returneres
                return insert(explode,requested)->ptr;
@@ -297,13 +299,11 @@ void *mymalloc(size_t requested){
         }
         case Next:
         {
-
-                MemoryList *explode = nextSearch(requested);
-                if (explode) {
-                    next = insert(explode, requested);
-                    return next->ptr;
-                }
-
+                    MemoryList *explode = nextSearch(requested);
+                    if (explode) {
+                        next = insert(explode, requested);
+                        return next->ptr;
+                    }
             break;
             }
     }
@@ -370,7 +370,7 @@ int mem_free()
 /* Number of bytes in the largest contiguous area of unallocated memory */
 int mem_largest_free()
 {
-    MemoryList * largest = search(0);
+    MemoryList * largest = worstSearch(0);
 
     if(largest!=NULL) {
         return largest->size;
